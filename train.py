@@ -15,8 +15,8 @@ from utils import utils_image as util
 from utils import utils_option as option
 from utils.utils_dist import get_dist_info, init_dist
 
-from dataset.select_dataset import define_Dataset
-from model.select_model import define_Model
+from data.select_dataset import define_Dataset
+from models.select_model import define_Model
 
 
 def main(json_path='config/config_denoising_rgb.json'):
@@ -208,6 +208,8 @@ def main(json_path='config/config_denoising_rgb.json'):
 
                 avg_psnr = 0.0
                 idx = 0
+
+                torch.cuda.empty_cache()
 
                 for test_data in test_loader:
                     idx += 1

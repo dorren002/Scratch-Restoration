@@ -197,6 +197,7 @@ class ModelPlain(ModelBase):
     # ----------------------------------------
     def test(self):
         self.netG.eval()
+        #self.G_optimizer.zero_grad()
         with torch.no_grad():
             self.netG_forward()
         self.netG.train()

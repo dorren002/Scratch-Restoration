@@ -1,5 +1,5 @@
 {
-  "task": "swinir_scratch"     //  color Gaussian denoising for noise level 15/25/50. root/task/images-models-options
+  "task": "swinir"     //  color Gaussian denoising for noise level 15/25/50. root/task/images-models-options
   , "model": "plain" // "plain" | "plain2" if two inputs
   , "gpu_ids": [0,1,2,3,4,5,6,7]
   , "dist": true
@@ -7,7 +7,7 @@
   , "n_channels": 3  // broadcast to "datasets", 1 for grayscale, 3 for color
 
   , "path": {
-    "root": "denoising"            // "denoising" | "superresolution" | "dejpeg"
+    "root": "outdir"            // "denoising" | "superresolution" | "dejpeg"
     , "pretrained_netG": null      // path of pretrained model
     , "pretrained_netE": null      // path of pretrained model
   }
@@ -15,21 +15,21 @@
   , "datasets": {
     "train": {
       "name": "train_dataset"           // just name
-      , "dataset_type": "dncnn"         // "dncnn" | "dnpatch" | "fdncnn" | "ffdnet" | "sr" | "srmd" | "dpsr" | "plain" | "plainpatch" | "jpeg"
-      , "dataroot_H": "trainsets/groundtruth"// path of H training dataset. DIV2K (800 training images) + Flickr2K (2650 images) + BSD500 (400 training&testing images) + WED(4744 images) in SwinIR
-      , "dataroot_L": "trainsets/input"             // path of L training dataset
+      , "dataset_type": "plainpatch"         // "dncnn" | "dnpatch" | "fdncnn" | "ffdnet" | "sr" | "srmd" | "dpsr" | "plain" | "plainpatch" | "jpeg"
+      , "dataroot_H": "trainsets/trainH_3"// path of H training dataset. DIV2K (800 training images) + Flickr2K (2650 images) + BSD500 (400 training&testing images) + WED(4744 images) in SwinIR
+      , "dataroot_L": "trainsets/trainL_3"             // path of L training dataset
 
       , "H_size": 128                   // patch_size
 
       , "dataloader_shuffle": true
       , "dataloader_num_workers": 16
-      , "dataloader_batch_size": 8      // batch size 1 | 16 | 32 | 48 | 64 | 128. Total batch size =1x8=8 in SwinIR
+      , "dataloader_batch_size": 1      // batch size 1 | 16 | 32 | 48 | 64 | 128. Total batch size =1x8=8 in SwinIR
     }
     , "test": {
       "name": "test_dataset"            // just name
       , "dataset_type": "dncnn"         // "dncnn" | "dnpatch" | "fdncnn" | "ffdnet" | "sr" | "srmd" | "dpsr" | "plain" | "plainpatch" | "jpeg"
-      , "dataroot_H": "testsets/groundtruth"  // path of H testing dataset
-      , "dataroot_L": "testsets/input"             // path of L testing dataset
+      , "dataroot_H": "testsets/testH"  // path of H testing dataset
+      , "dataroot_L": "testsets/testL"             // path of L testing dataset
 
     }
   }
