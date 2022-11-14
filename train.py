@@ -176,7 +176,7 @@ def main(json_path='config/config_denoising_rgb.json'):
             # -------------------------------
             # 2) feed patch pairs
             # -------------------------------
-            model.feed_data(train_data)
+            model.feed_data(train_data, need_M=True)
 
             # -------------------------------
             # 3) optimize parameters
@@ -219,7 +219,7 @@ def main(json_path='config/config_denoising_rgb.json'):
                     img_dir = os.path.join(opt['path']['images'], img_name)
                     util.mkdir(img_dir)
 
-                    model.feed_data(test_data)
+                    model.feed_data(test_data, need_M=True)
                     model.test()
 
                     visuals = model.current_visuals()

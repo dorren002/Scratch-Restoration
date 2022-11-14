@@ -8,6 +8,8 @@ def define_Dataset(dataset_opt):
     # -----------------------------------------
     elif dataset_type in ['dncnn', 'denoising']:
         from data.dataset_dncnn import DatasetDnCNN as D
+    elif dataset_type in ['dymask']:
+        from data.dataset_addMask import DyMaskDataset as D
 
     dataset = D(dataset_opt)
     print('Dataset [{:s} - {:s}] is created.'.format(

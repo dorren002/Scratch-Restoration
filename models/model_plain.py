@@ -146,8 +146,10 @@ class ModelPlain(ModelBase):
     # ----------------------------------------
     # feed L/H data
     # ----------------------------------------
-    def feed_data(self, data, need_H=True):
+    def feed_data(self, data, need_H=True, need_M=False):
         self.L = data['L'].to(self.device)
+        if need_M:
+            self.M = data['M'].to(self.device)
         if need_H:
             self.H = data['H'].to(self.device)
 
@@ -155,7 +157,7 @@ class ModelPlain(ModelBase):
     # feed L to netG
     # ----------------------------------------
     def netG_forward(self):
-        self.E = self.netG(self.L)
+        self.E = self.netG(self.L, self.M)
 
     # ----------------------------------------
     # update parameters and get loss

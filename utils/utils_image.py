@@ -274,7 +274,6 @@ def single2uint16(img):
 # numpy(uint) (HxWxC or HxW) <--->  tensor
 # --------------------------------------------
 
-
 # convert uint to 4-dimensional torch tensor
 def uint2tensor4(img):
     if img.ndim == 2:
@@ -301,6 +300,11 @@ def tensor2uint(img):
 # numpy(single) (HxWxC) <--->  tensor
 # --------------------------------------------
 
+# convert single (HxW) to 2-dimensional torch tensor
+def single2tensor2(img):
+    if img.ndim == 3:
+        img = np.transpose(img, (2,0,1))[0]
+    return torch.from_numpy(np.ascontiguousarray(img)).float()
 
 # convert single (HxWxC) to 3-dimensional torch tensor
 def single2tensor3(img):
@@ -612,6 +616,9 @@ def channel_convert(in_c, tar_type, img_list):
     else:
         return img_list
 
+
+def mask_invert(mask):
+    return 1.0-mask
 
 '''
 # --------------------------------------------
