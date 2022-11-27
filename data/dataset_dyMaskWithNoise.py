@@ -7,7 +7,7 @@ import utils.utils_image as util
 import cv2
 
 
-class DyMaskDataset(data.Dataset):
+class DyMaskNoiseDataset(data.Dataset):
     """
     # -----------------------------------------
     # Get L/H for scratch restoration
@@ -15,7 +15,7 @@ class DyMaskDataset(data.Dataset):
     """
 
     def __init__(self, opt):
-        super(DyMaskDataset, self).__init__()
+        super(DyMaskNoiseDataset, self).__init__()
         self.opt = opt
         self.n_channels = opt['n_channels'] if opt['n_channels'] else 3
         self.patch_size = opt['H_size'] if opt['H_size'] else 64

@@ -1,4 +1,4 @@
-import os.path
+import os.path,cv2
 import math
 import argparse
 import time
@@ -12,6 +12,7 @@ import torch
 
 from utils import utils_logger
 from utils import utils_image as util
+from utils import utils_metric
 from utils import utils_option as option
 from utils.utils_dist import get_dist_info, init_dist
 
@@ -168,6 +169,10 @@ def main(json_path='config/config_denoising_rgb.json'):
 
             current_step += 1
 
+            # util.imsave(util.tensor2uint(train_data['L']), 'test.jpg')
+            # util.imsave(util.tensor2uint(train_data['M']), 'mask.jpg')
+            # util.imsave(util.tensor2uint(train_data['H']), 'gt.jpg')
+
             # -------------------------------
             # 1) update learning rate
             # -------------------------------
@@ -225,6 +230,7 @@ def main(json_path='config/config_denoising_rgb.json'):
                     visuals = model.current_visuals()
                     E_img = util.tensor2uint(visuals['E'])
                     H_img = util.tensor2uint(visuals['H'])
+                    mask = util.tensor2uint(test_data['M'])
 
                     # -----------------------
                     # save estimated image E
@@ -236,8 +242,8 @@ def main(json_path='config/config_denoising_rgb.json'):
                     # -----------------------
                     # calculate PSNR
                     # -----------------------
-                    current_psnr = util.calculate_psnr(
-                        E_img, H_img, border=border)
+                    current_psnr = utils_metric.calculate_psnr_on_defect_area(
+                        E_img, H_img, mask, border=border)
 
                     logger.info(
                         '{:->4d}--> {:>10s} | {:<4.2f}dB'.format(idx, image_name_ext, current_psnr))

@@ -7,22 +7,23 @@ import os
 import torch
 import requests
 
-from models.network_swinir import SwinIR as net
+from models.network_maswinir import SwinIR as net
 from utils import utils_image as util
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--task', type=str, default='denoise')
+    parser.add_argument('--task', type=str, default='scratch_inpaint')
     parser.add_argument('--scale', type=int, default=1, help='scale factor: 1, 2, 3, 4, 8') # 1 for dn and jpeg car
     parser.add_argument('--training_patch_size', type=int, default=128, help='patch size used in training SwinIR. '
                                        'Just used to differentiate two different settings in Table 2 of the paper. '
                                        'Images are NOT tested patch by patch.')
     parser.add_argument('--large_model', action='store_true', help='use large model, only provided for real image sr')
     parser.add_argument('--model_path', type=str,
-                        default='/home/lixuewei/dorren/outdir/inpainting/pconv_inpainting_1117_square_defect255/models/620000_G.pth')
-    parser.add_argument('--folder_lq', type=str, default='/home/lixuewei/dorren/outdir/real/input/', help='input low-quality test image folder')
-    parser.add_argument('--folder_gt', type=str, default='/home/lixuewei/dorren/outdir/real/input/', help='input ground-truth test image folder')
+                        default='/home/lixuewei/dorren/outdir/inpainting/pconv_inpainting_1120_multishape_defect255/models/620000_G.pth')
+    parser.add_argument('--folder_lq', type=str, default='/home/lixuewei/dorren/outdir/real_2x/input/', help='input low-quality test image folder')
+    parser.add_argument('--folder_mask', type=str, default='/home/lixuewei/dorren/outdir/real_2x/mask/', help='mask for input test image folder')
+    parser.add_argument('--folder_gt', type=str, default=None, help='input ground-truth test image folder')
     parser.add_argument('--tile', type=int, default=None, help='Tile size, None for no tile during testing (testing as a whole)')
     parser.add_argument('--tile_overlap', type=int, default=32, help='Overlapping of different tiles')
     args = parser.parse_args()
@@ -43,21 +44,15 @@ def main():
     model = model.to(device)
 
     # setup folder and path
-    folder, save_dir, border, window_size = setup(args)
+    folder_lq, folder_m, save_dir, border, window_size = setup(args)
     os.makedirs(save_dir, exist_ok=True)
-    test_results = OrderedDict()
-    test_results['psnr'] = []
-    test_results['ssim'] = []
-    test_results['psnr_y'] = []
-    test_results['ssim_y'] = []
-    test_results['psnr_b'] = []
-    psnr, ssim, psnr_y, ssim_y, psnr_b = 0, 0, 0, 0, 0
 
-    for idx, path in enumerate(sorted(glob.glob(os.path.join(folder, '*')))):
+    for idx, path in enumerate(sorted(glob.glob(os.path.join(folder_lq, '*')))):
         # read image
-        imgname, img_lq, img_gt = get_image_pair(args, path)  # image to HWC-BGR, float32
+        imgname, img_lq, mask = get_image_pair(args, path, folder_m)  # image to HWC-BGR, float32
         img_lq = np.transpose(img_lq if img_lq.shape[2] == 1 else img_lq[:, :, [2, 1, 0]], (2, 0, 1))  # HCW-BGR to CHW-RGB
         img_lq = torch.from_numpy(img_lq).float().unsqueeze(0).to(device)  # CHW-RGB to NCHW-RGB
+        mask = torch.from_numpy(mask).float().unsqueeze(0).to(device)
 
         # inference
         with torch.no_grad():
@@ -67,7 +62,9 @@ def main():
             w_pad = (w_old // window_size + 1) * window_size - w_old
             img_lq = torch.cat([img_lq, torch.flip(img_lq, [2])], 2)[:, :, :h_old + h_pad, :]
             img_lq = torch.cat([img_lq, torch.flip(img_lq, [3])], 3)[:, :, :, :w_old + w_pad]
-            output = test(img_lq, model, args, window_size)
+            mask = torch.cat([mask, torch.flip(mask, [1])], 1)[:, :h_old + h_pad, :]
+            mask = torch.cat([mask, torch.flip(mask, [2])], 2)[:, :, :w_old + w_pad]
+            output = test(img_lq, mask, model, args, window_size)
             output = output[..., :h_old * args.scale, :w_old * args.scale]
 
         # save image
@@ -75,47 +72,8 @@ def main():
         if output.ndim == 3:
             output = np.transpose(output[[2, 1, 0], :, :], (1, 2, 0))  # CHW-RGB to HCW-BGR
         output = (output * 255.0).round().astype(np.uint8)  # float32 to uint8
-        cv2.imwrite(f'{save_dir}/{imgname}_SwinIR.png', output)
-
-        # evaluate psnr/ssim/psnr_b
-        if img_gt is not None:
-            img_gt = (img_gt * 255.0).round().astype(np.uint8)  # float32 to uint8
-            img_gt = img_gt[:h_old * args.scale, :w_old * args.scale, ...]  # crop gt
-            img_gt = np.squeeze(img_gt)
-
-            psnr = util.calculate_psnr(output, img_gt, border=border)
-            ssim = util.calculate_ssim(output, img_gt, border=border)
-            test_results['psnr'].append(psnr)
-            test_results['ssim'].append(ssim)
-            if img_gt.ndim == 3:  # RGB image
-                output_y = util.bgr2ycbcr(output.astype(np.float32) / 255.) * 255.
-                img_gt_y = util.bgr2ycbcr(img_gt.astype(np.float32) / 255.) * 255.
-                psnr_y = util.calculate_psnr(output_y, img_gt_y, border=border)
-                ssim_y = util.calculate_ssim(output_y, img_gt_y, border=border)
-                test_results['psnr_y'].append(psnr_y)
-                test_results['ssim_y'].append(ssim_y)
-            if args.task in ['jpeg_car']:
-                psnr_b = util.calculate_psnrb(output, img_gt, border=border)
-                test_results['psnr_b'].append(psnr_b)
-            print('Testing {:d} {:20s} - PSNR: {:.2f} dB; SSIM: {:.4f}; '
-                  'PSNR_Y: {:.2f} dB; SSIM_Y: {:.4f}; '
-                  'PSNR_B: {:.2f} dB.'.
-                  format(idx, imgname, psnr, ssim, psnr_y, ssim_y, psnr_b))
-        else:
-            print('Testing {:d} {:20s}'.format(idx, imgname))
-
-    # summarize psnr/ssim
-    if img_gt is not None:
-        ave_psnr = sum(test_results['psnr']) / len(test_results['psnr'])
-        ave_ssim = sum(test_results['ssim']) / len(test_results['ssim'])
-        print('\n{} \n-- Average PSNR/SSIM(RGB): {:.2f} dB; {:.4f}'.format(save_dir, ave_psnr, ave_ssim))
-        if img_gt.ndim == 3:
-            ave_psnr_y = sum(test_results['psnr_y']) / len(test_results['psnr_y'])
-            ave_ssim_y = sum(test_results['ssim_y']) / len(test_results['ssim_y'])
-            print('-- Average PSNR_Y/SSIM_Y: {:.2f} dB; {:.4f}'.format(ave_psnr_y, ave_ssim_y))
-        if args.task in ['jpeg_car']:
-            ave_psnr_b = sum(test_results['psnr_b']) / len(test_results['psnr_b'])
-            print('-- Average PSNR_B: {:.2f} dB'.format(ave_psnr_b))
+        print(f'{save_dir}/{imgname}_restored.png')
+        cv2.imwrite(f'{save_dir}/{imgname}_restored.png', output)
 
 
 def define_model(args):
@@ -131,29 +89,27 @@ def define_model(args):
 
 
 def setup(args):
-    save_dir = f'~/dorren/outdir/results/pconv_square_defect255_70epoch'
-    folder = args.folder_gt
+    save_dir = f'/home/lixuewei/dorren/outdir/results/pconv_multishape_255_620000'
+    folder_lq = args.folder_lq
+    folder_m = args.folder_mask
     border = 0
     window_size = 8
 
-    return folder, save_dir, border, window_size
+    return folder_lq, folder_m, save_dir, border, window_size
 
 
-def get_image_pair(args, path):
-    (imgname, imgext) = os.path.splitext(os.path.basename(path))
-
-    # 005 color image denoising (load gt image and generate lq image on-the-fly)    
-    img_gt = cv2.imread(path, cv2.IMREAD_COLOR).astype(np.float32) / 255.
-    np.random.seed(seed=0)
-    img_lq = img_gt + np.random.normal(0, args.noise / 255., img_gt.shape)
-
-    return imgname, img_lq, img_gt
+def get_image_pair(args, path, mask_dir):
+    (imgname, imgext) = os.path.splitext(os.path.basename(path))   
+    img_lq = cv2.imread(path, cv2.IMREAD_COLOR).astype(np.float32) / 255.
+    mask = cv2.imread(os.path.join(mask_dir, imgname+'.png'), cv2.IMREAD_GRAYSCALE).astype(np.float32) / 255.
+    mask = 1-mask
+    return imgname, img_lq, mask
 
 
-def test(img_lq, model, args, window_size):
+def test(img_lq, mask, model, args, window_size):
     if args.tile is None:
         # test the image as a whole
-        output = model(img_lq)
+        output = model(img_lq, mask)
     else:
         # test the image tile by tile
         b, c, h, w = img_lq.size()

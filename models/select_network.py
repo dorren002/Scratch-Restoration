@@ -5,10 +5,9 @@ from torch.nn import init
 
 """
 # --------------------------------------------
-# select the network of G, D and F
+# select the network of G
 # --------------------------------------------
 """
-
 
 # --------------------------------------------
 # Generator, netG, G
@@ -17,177 +16,10 @@ def define_G(opt):
     opt_net = opt['netG']
     net_type = opt_net['net_type']
 
-
-    # ----------------------------------------
-    # denoising task
-    # ----------------------------------------
-
-    # ----------------------------------------
-    # DnCNN
-    # ----------------------------------------
-    if net_type == 'dncnn':
-        from models.network_dncnn import DnCNN as net
-        netG = net(in_nc=opt_net['in_nc'],
-                   out_nc=opt_net['out_nc'],
-                   nc=opt_net['nc'],
-                   nb=opt_net['nb'],  # total number of conv layers
-                   act_mode=opt_net['act_mode'])
-
-    # ----------------------------------------
-    # Flexible DnCNN
-    # ----------------------------------------
-    elif net_type == 'fdncnn':
-        from models.network_dncnn import FDnCNN as net
-        netG = net(in_nc=opt_net['in_nc'],
-                   out_nc=opt_net['out_nc'],
-                   nc=opt_net['nc'],
-                   nb=opt_net['nb'],  # total number of conv layers
-                   act_mode=opt_net['act_mode'])
-
-    # ----------------------------------------
-    # FFDNet
-    # ----------------------------------------
-    elif net_type == 'ffdnet':
-        from models.network_ffdnet import FFDNet as net
-        netG = net(in_nc=opt_net['in_nc'],
-                   out_nc=opt_net['out_nc'],
-                   nc=opt_net['nc'],
-                   nb=opt_net['nb'],
-                   act_mode=opt_net['act_mode'])
-
-    # ----------------------------------------
-    # others
-    # ----------------------------------------
-
-    # ----------------------------------------
-    # super-resolution task
-    # ----------------------------------------
-
-    # ----------------------------------------
-    # SRMD
-    # ----------------------------------------
-    elif net_type == 'srmd':
-        from models.network_srmd import SRMD as net
-        netG = net(in_nc=opt_net['in_nc'],
-                   out_nc=opt_net['out_nc'],
-                   nc=opt_net['nc'],
-                   nb=opt_net['nb'],
-                   upscale=opt_net['scale'],
-                   act_mode=opt_net['act_mode'],
-                   upsample_mode=opt_net['upsample_mode'])
-
-    # ----------------------------------------
-    # super-resolver prior of DPSR
-    # ----------------------------------------
-    elif net_type == 'dpsr':
-        from models.network_dpsr import MSRResNet_prior as net
-        netG = net(in_nc=opt_net['in_nc'],
-                   out_nc=opt_net['out_nc'],
-                   nc=opt_net['nc'],
-                   nb=opt_net['nb'],
-                   upscale=opt_net['scale'],
-                   act_mode=opt_net['act_mode'],
-                   upsample_mode=opt_net['upsample_mode'])
-
-    # ----------------------------------------
-    # modified SRResNet v0.0
-    # ----------------------------------------
-    elif net_type == 'msrresnet0':
-        from models.network_msrresnet import MSRResNet0 as net
-        netG = net(in_nc=opt_net['in_nc'],
-                   out_nc=opt_net['out_nc'],
-                   nc=opt_net['nc'],
-                   nb=opt_net['nb'],
-                   upscale=opt_net['scale'],
-                   act_mode=opt_net['act_mode'],
-                   upsample_mode=opt_net['upsample_mode'])
-
-    # ----------------------------------------
-    # modified SRResNet v0.1
-    # ----------------------------------------
-    elif net_type == 'msrresnet1':
-        from models.network_msrresnet import MSRResNet1 as net
-        netG = net(in_nc=opt_net['in_nc'],
-                   out_nc=opt_net['out_nc'],
-                   nc=opt_net['nc'],
-                   nb=opt_net['nb'],
-                   upscale=opt_net['scale'],
-                   act_mode=opt_net['act_mode'],
-                   upsample_mode=opt_net['upsample_mode'])
-
-    # ----------------------------------------
-    # RRDB
-    # ----------------------------------------
-    elif net_type == 'rrdb':  # RRDB
-        from models.network_rrdb import RRDB as net
-        netG = net(in_nc=opt_net['in_nc'],
-                   out_nc=opt_net['out_nc'],
-                   nc=opt_net['nc'],
-                   nb=opt_net['nb'],
-                   gc=opt_net['gc'],
-                   upscale=opt_net['scale'],
-                   act_mode=opt_net['act_mode'],
-                   upsample_mode=opt_net['upsample_mode'])
-
-    # ----------------------------------------
-    # RRDBNet
-    # ----------------------------------------
-    elif net_type == 'rrdbnet':  # RRDBNet
-        from models.network_rrdbnet import RRDBNet as net
-        netG = net(in_nc=opt_net['in_nc'],
-                   out_nc=opt_net['out_nc'],
-                   nf=opt_net['nf'],
-                   nb=opt_net['nb'],
-                   gc=opt_net['gc'],
-                   sf=opt_net['scale'])
-
-    # ----------------------------------------
-    # IMDB
-    # ----------------------------------------
-    elif net_type == 'imdn':  # IMDB
-        from models.network_imdn import IMDN as net
-        netG = net(in_nc=opt_net['in_nc'],
-                   out_nc=opt_net['out_nc'],
-                   nc=opt_net['nc'],
-                   nb=opt_net['nb'],
-                   upscale=opt_net['scale'],
-                   act_mode=opt_net['act_mode'],
-                   upsample_mode=opt_net['upsample_mode'])
-
-    # ----------------------------------------
-    # USRNet
-    # ----------------------------------------
-    elif net_type == 'usrnet':  # USRNet
-        from models.network_usrnet import USRNet as net
-        netG = net(n_iter=opt_net['n_iter'],
-                   h_nc=opt_net['h_nc'],
-                   in_nc=opt_net['in_nc'],
-                   out_nc=opt_net['out_nc'],
-                   nc=opt_net['nc'],
-                   nb=opt_net['nb'],
-                   act_mode=opt_net['act_mode'],
-                   downsample_mode=opt_net['downsample_mode'],
-                   upsample_mode=opt_net['upsample_mode']
-                   )
-
-    # ----------------------------------------
-    # Deep Residual U-Net (drunet)
-    # ----------------------------------------
-    elif net_type == 'drunet':
-        from models.network_unet import UNetRes as net
-        netG = net(in_nc=opt_net['in_nc'],
-                   out_nc=opt_net['out_nc'],
-                   nc=opt_net['nc'],
-                   nb=opt_net['nb'],
-                   act_mode=opt_net['act_mode'],
-                   downsample_mode=opt_net['downsample_mode'],
-                   upsample_mode=opt_net['upsample_mode'],
-                   bias=opt_net['bias'])
-
     # ----------------------------------------
     # SwinIR
     # ----------------------------------------
-    elif net_type == 'swinir':
+    if net_type == 'swinir':
         from models.network_swinir import SwinIR as net
         netG = net(upscale=opt_net['upscale'],
                    in_chans=opt_net['in_chans'],
@@ -228,31 +60,6 @@ def define_G(opt):
                    mlp_ratio=opt_net['mlp_ratio'],
                    upsampler=opt_net['upsampler'],
                    resi_connection=opt_net['resi_connection'])
-    # ----------------------------------------
-    # VRT
-    # ----------------------------------------
-    elif net_type == 'vrt':
-        from models.network_vrt import VRT as net
-        netG = net(upscale=opt_net['upscale'],
-                   img_size=opt_net['img_size'],
-                   window_size=opt_net['window_size'],
-                   depths=opt_net['depths'],
-                   indep_reconsts=opt_net['indep_reconsts'],
-                   embed_dims=opt_net['embed_dims'],
-                   num_heads=opt_net['num_heads'],
-                   spynet_path=opt_net['spynet_path'],
-                   pa_frames=opt_net['pa_frames'],
-                   deformable_groups=opt_net['deformable_groups'],
-                   nonblind_denoising=opt_net['nonblind_denoising'],
-                   use_checkpoint_attn=opt_net['use_checkpoint_attn'],
-                   use_checkpoint_ffn=opt_net['use_checkpoint_ffn'],
-                   no_checkpoint_attn_blocks=opt_net['no_checkpoint_attn_blocks'],
-                   no_checkpoint_ffn_blocks=opt_net['no_checkpoint_ffn_blocks'])
-
-    # ----------------------------------------
-    # others
-    # ----------------------------------------
-    # TODO
 
     else:
         raise NotImplementedError('netG [{:s}] is not found.'.format(net_type))
@@ -267,73 +74,6 @@ def define_G(opt):
                      gain=opt_net['init_gain'])
 
     return netG
-
-
-# --------------------------------------------
-# Discriminator, netD, D
-# --------------------------------------------
-def define_D(opt):
-    opt_net = opt['netD']
-    net_type = opt_net['net_type']
-
-    # ----------------------------------------
-    # discriminator_vgg_96
-    # ----------------------------------------
-    if net_type == 'discriminator_vgg_96':
-        from models.network_discriminator import Discriminator_VGG_96 as discriminator
-        netD = discriminator(in_nc=opt_net['in_nc'],
-                             base_nc=opt_net['base_nc'],
-                             ac_type=opt_net['act_mode'])
-
-    # ----------------------------------------
-    # discriminator_vgg_128
-    # ----------------------------------------
-    elif net_type == 'discriminator_vgg_128':
-        from models.network_discriminator import Discriminator_VGG_128 as discriminator
-        netD = discriminator(in_nc=opt_net['in_nc'],
-                             base_nc=opt_net['base_nc'],
-                             ac_type=opt_net['act_mode'])
-
-    # ----------------------------------------
-    # discriminator_vgg_192
-    # ----------------------------------------
-    elif net_type == 'discriminator_vgg_192':
-        from models.network_discriminator import Discriminator_VGG_192 as discriminator
-        netD = discriminator(in_nc=opt_net['in_nc'],
-                             base_nc=opt_net['base_nc'],
-                             ac_type=opt_net['act_mode'])
-
-    # ----------------------------------------
-    # discriminator_vgg_128_SN
-    # ----------------------------------------
-    elif net_type == 'discriminator_vgg_128_SN':
-        from models.network_discriminator import Discriminator_VGG_128_SN as discriminator
-        netD = discriminator()
-
-    elif net_type == 'discriminator_patchgan':
-        from models.network_discriminator import Discriminator_PatchGAN as discriminator
-        netD = discriminator(input_nc=opt_net['in_nc'],
-                             ndf=opt_net['base_nc'],
-                             n_layers=opt_net['n_layers'],
-                             norm_type=opt_net['norm_type'])
-
-    elif net_type == 'discriminator_unet':
-        from models.network_discriminator import Discriminator_UNet as discriminator
-        netD = discriminator(input_nc=opt_net['in_nc'],
-                             ndf=opt_net['base_nc'])
-
-    else:
-        raise NotImplementedError('netD [{:s}] is not found.'.format(net_type))
-
-    # ----------------------------------------
-    # initialize weights
-    # ----------------------------------------
-    init_weights(netD,
-                 init_type=opt_net['init_type'],
-                 init_bn_type=opt_net['init_bn_type'],
-                 gain=opt_net['init_gain'])
-
-    return netD
 
 
 # --------------------------------------------
