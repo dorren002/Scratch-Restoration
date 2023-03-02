@@ -20,9 +20,10 @@ def main():
                                        'Images are NOT tested patch by patch.')
     parser.add_argument('--large_model', action='store_true', help='use large model, only provided for real image sr')
     parser.add_argument('--model_path', type=str,
-                        default='/home/lixuewei/dorren/outdir/inpainting/pconv_inpainting_1117_square_defect255/models/620000_G.pth')
-    parser.add_argument('--folder_lq', type=str, default='/home/lixuewei/dorren/outdir/real/input/', help='input low-quality test image folder')
-    parser.add_argument('--folder_gt', type=str, default='/home/lixuewei/dorren/outdir/real/input/', help='input ground-truth test image folder')
+                        default='/home/lixuewei/dorren/outdir/inpainting/pconv_inpainting_1120_multishape_defect255/models/620000_G.pth')
+    # parser.add_argument('--folder_lq', type=str, default='/home/lixuewei/dorren/outdir/real/input/', help='input low-quality test image folder')
+    parser.add_argument('--folder_lq', type=str, default='/home/lixuewei/dataset/swinir_denoise/images', help='input low-quality test image folder')
+    parser.add_argument('--folder_gt', type=str, default='/home/lixuewei/dataset/swinir_denoise/masks', help='input ground-truth test image folder')
     parser.add_argument('--tile', type=int, default=None, help='Tile size, None for no tile during testing (testing as a whole)')
     parser.add_argument('--tile_overlap', type=int, default=32, help='Overlapping of different tiles')
     args = parser.parse_args()
@@ -131,7 +132,7 @@ def define_model(args):
 
 
 def setup(args):
-    save_dir = f'~/dorren/outdir/results/pconv_square_defect255_70epoch'
+    save_dir = f'~/dorren/outdir/results/pconv_testset_1120_255_70epoch'
     folder = args.folder_gt
     border = 0
     window_size = 8

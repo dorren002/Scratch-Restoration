@@ -19,6 +19,7 @@ from utils.utils_dist import get_dist_info, init_dist
 from data.select_dataset import define_Dataset
 from models.select_model import define_Model
 
+from torch.utils.tensorboard import SummaryWriter
 
 def main(json_path='config/config_denoising_rgb.json'):
     '''
@@ -86,6 +87,9 @@ def main(json_path='config/config_denoising_rgb.json'):
             opt['path']['log'], logger_name+'.log'))
         logger = logging.getLogger(logger_name)
         logger.info(option.dict2str(opt))
+
+        tb_writer = SummaryWriter(os.path.join(
+            opt['path']['log'], 'tb'))
 
     # ----------------------------------------
     # seed
@@ -186,7 +190,10 @@ def main(json_path='config/config_denoising_rgb.json'):
             # -------------------------------
             # 3) optimize parameters
             # -------------------------------
-            model.optimize_parameters(current_step)
+            loss = model.optimize_parameters(current_step)
+
+            tb_writer.add_scalar('loss', loss, i)
+            tb_writer.add_scalar('lr', model.current_learning_rate(), i)
 
             # -------------------------------
             # 4) training information
@@ -255,6 +262,7 @@ def main(json_path='config/config_denoising_rgb.json'):
                 # testing log
                 logger.info('<epoch:{:3d}, iter:{:8,d}, Average PSNR : {:<.2f}dB\n'.format(
                     epoch, current_step, avg_psnr))
+    tb_writer.close()
 
 
 if __name__ == '__main__':

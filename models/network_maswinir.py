@@ -166,22 +166,14 @@ class PartialConv2d(nn.Conv2d):
 
     def __init__(self, *args, **kwargs):
         # whether the mask is multi-channel or not
-        if 'multi_channel' in kwargs:
-            self.multi_channel = kwargs['multi_channel']
-            kwargs.pop('multi_channel')
-        else:
-            self.multi_channel = False  
         if 'return_mask' in kwargs:
             self.return_mask = kwargs['return_mask']
             kwargs.pop('return_mask')
         else:
             self.return_mask = False
         super(PartialConv2d, self).__init__(*args, **kwargs)
-        if self.multi_channel:
-            self.weight_maskUpdater = torch.ones(self.out_channels, self.in_channels, self.kernel_size[0], self.kernel_size[1])
-        else:
-            self.weight_maskUpdater = torch.ones(1, 1, self.kernel_size[0], self.kernel_size[1])
-            
+        self.weight_maskUpdater = torch.ones(self.out_channels, 1, self.kernel_size[0], self.kernel_size[1])
+        
         self.slide_winsize = self.weight_maskUpdater.shape[1] * self.weight_maskUpdater.shape[2] * self.weight_maskUpdater.shape[3]
         self.last_size = (None, None, None, None)
         self.update_mask = None
@@ -728,7 +720,7 @@ class SwinIR(nn.Module):
         #####################################################################################################
         ################################### 1, shallow feature extraction ###################################
         # self.conv_first = nn.Conv2d(num_in_ch, embed_dim, 3, 1, 1)
-        self.conv_first = PartialConv2d(num_in_ch, embed_dim, kernel_size=3, stride=1, padding=1, return_mask=True)
+        self.conv_first = PartialConv2d(in_channels= num_in_ch, out_channels=embed_dim, kernel_size=3, stride=1, padding=1, return_mask=False)
 
         #####################################################################################################
         ################################### 2, deep feature extraction ######################################
@@ -874,7 +866,7 @@ class SwinIR(nn.Module):
         self.mean = self.mean.type_as(x)
         x = (x - self.mean) * self.img_range
         
-        x_first, new_mask = self.conv_first(x, mask)
+        x_first = self.conv_first(x, mask)
         res = self.conv_after_body(self.forward_features(x_first)) + x_first
         x = x + self.conv_last(res)
 

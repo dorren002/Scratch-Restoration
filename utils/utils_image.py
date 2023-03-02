@@ -194,6 +194,7 @@ def imread_uint(path, n_channels=3):
         img = np.expand_dims(img, axis=2)  # HxWx1
     elif n_channels == 3:
         img = cv2.imread(path, cv2.IMREAD_UNCHANGED)  # BGR or G
+        # img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
         if img.ndim == 2:
             img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)  # GGG
         else:
@@ -841,8 +842,8 @@ def imresize_np(img, scale, antialiasing=True):
     return out_2.numpy()
 
 
-if __name__ == '__main__':
-    img = imread_uint('test.bmp', 3)
+# if __name__ == '__main__':
+#     img = imread_uint('test.bmp', 3)
 #    img = uint2single(img)
 #    img_bicubic = imresize_np(img, 1/4)
 #    imshow(single2uint(img_bicubic))

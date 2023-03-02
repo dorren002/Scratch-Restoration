@@ -20,9 +20,10 @@ def main():
                                        'Images are NOT tested patch by patch.')
     parser.add_argument('--large_model', action='store_true', help='use large model, only provided for real image sr')
     parser.add_argument('--model_path', type=str,
-                        default='/home/lixuewei/dorren/outdir/inpainting/pconv_inpainting_1120_multishape_defect255/models/620000_G.pth')
-    parser.add_argument('--folder_lq', type=str, default='/home/lixuewei/dorren/outdir/real_2x/input/', help='input low-quality test image folder')
-    parser.add_argument('--folder_mask', type=str, default='/home/lixuewei/dorren/outdir/real_2x/mask/', help='mask for input test image folder')
+                        default='/home/lixuewei/dorren/outdir/inpainting/pconv_inpainting_1120_multishape_defect255/models/650000_G.pth')
+    parser.add_argument('--folder_lq', type=str, default='/home/lixuewei/dorren/outdir/real_2x/masked_regular/', help='input low-quality test image folder')
+    # parser.add_argument('--folder_lq', type=str, default='/home/lixuewei/dataset/swinir_denoise/test/corrupted_real/', help='input low-quality test image folder')
+    parser.add_argument('--folder_mask', type=str, default='/home/lixuewei/dorren/outdir/real_2x/mask_regular/', help='mask for input test image folder')
     parser.add_argument('--folder_gt', type=str, default=None, help='input ground-truth test image folder')
     parser.add_argument('--tile', type=int, default=None, help='Tile size, None for no tile during testing (testing as a whole)')
     parser.add_argument('--tile_overlap', type=int, default=32, help='Overlapping of different tiles')
@@ -50,30 +51,35 @@ def main():
     for idx, path in enumerate(sorted(glob.glob(os.path.join(folder_lq, '*')))):
         # read image
         imgname, img_lq, mask = get_image_pair(args, path, folder_m)  # image to HWC-BGR, float32
-        img_lq = np.transpose(img_lq if img_lq.shape[2] == 1 else img_lq[:, :, [2, 1, 0]], (2, 0, 1))  # HCW-BGR to CHW-RGB
-        img_lq = torch.from_numpy(img_lq).float().unsqueeze(0).to(device)  # CHW-RGB to NCHW-RGB
-        mask = torch.from_numpy(mask).float().unsqueeze(0).to(device)
+        # img_lq = np.transpose(img_lq , (2, 0, 1)) 
+        # mask = np.transpose(mask, (2, 0, 1))
+        # img_lq = torch.from_numpy(img_lq).float().unsqueeze(0).to(device)  
+        # mask = torch.from_numpy(mask).float().to(device)
+        img_lq = img_lq.to(device)
+        mask = mask.to(device)
 
         # inference
         with torch.no_grad():
             # pad input image to be a multiple of window_size
-            _, _, h_old, w_old = img_lq.size()
-            h_pad = (h_old // window_size + 1) * window_size - h_old
-            w_pad = (w_old // window_size + 1) * window_size - w_old
-            img_lq = torch.cat([img_lq, torch.flip(img_lq, [2])], 2)[:, :, :h_old + h_pad, :]
-            img_lq = torch.cat([img_lq, torch.flip(img_lq, [3])], 3)[:, :, :, :w_old + w_pad]
-            mask = torch.cat([mask, torch.flip(mask, [1])], 1)[:, :h_old + h_pad, :]
-            mask = torch.cat([mask, torch.flip(mask, [2])], 2)[:, :, :w_old + w_pad]
+            # _, _, h_old, w_old = img_lq.size()
+            # h_pad = (h_old // window_size + 1) * window_size - h_old
+            # w_pad = (w_old // window_size + 1) * window_size - w_old
+            # img_lq = torch.cat([img_lq, torch.flip(img_lq, [2])], 2)[:, :, :h_old + h_pad, :]
+            # img_lq = torch.cat([img_lq, torch.flip(img_lq, [3])], 3)[:, :, :, :w_old + w_pad]
+            # mask = torch.cat([mask, torch.flip(mask, [1])], 1)[:, :h_old + h_pad, :]
+            # mask = torch.cat([mask, torch.flip(mask, [2])], 2)[:, :, :w_old + w_pad]
             output = test(img_lq, mask, model, args, window_size)
-            output = output[..., :h_old * args.scale, :w_old * args.scale]
+            # output = output[..., :h_old * args.scale, :w_old * args.scale]
 
         # save image
-        output = output.data.squeeze().float().cpu().clamp_(0, 1).numpy()
-        if output.ndim == 3:
-            output = np.transpose(output[[2, 1, 0], :, :], (1, 2, 0))  # CHW-RGB to HCW-BGR
-        output = (output * 255.0).round().astype(np.uint8)  # float32 to uint8
+        # output = output.data.squeeze().float().cpu().clamp_(0, 1).numpy()
+        # if output.ndim == 3:
+        #     output = np.transpose(output[[2, 1, 0], :, :], (1, 2, 0))  # CHW-RGB to HCW-BGR
+        # output = (output * 255.0).round().astype(np.uint8)  # float32 to uint8
+        output = util.tensor2uint(output)
         print(f'{save_dir}/{imgname}_restored.png')
-        cv2.imwrite(f'{save_dir}/{imgname}_restored.png', output)
+        util.imsave(output, f'{save_dir}/{imgname}_restored.png')
+        # cv2.imwrite(f'{save_dir}/{imgname}_restored.png', output)
 
 
 def define_model(args):
@@ -89,7 +95,7 @@ def define_model(args):
 
 
 def setup(args):
-    save_dir = f'/home/lixuewei/dorren/outdir/results/pconv_multishape_255_620000'
+    save_dir = f'/home/lixuewei/dorren/outdir/results/pconv_multishape_realimgenmask_255_620k'
     folder_lq = args.folder_lq
     folder_m = args.folder_mask
     border = 0
@@ -100,9 +106,10 @@ def setup(args):
 
 def get_image_pair(args, path, mask_dir):
     (imgname, imgext) = os.path.splitext(os.path.basename(path))   
-    img_lq = cv2.imread(path, cv2.IMREAD_COLOR).astype(np.float32) / 255.
-    mask = cv2.imread(os.path.join(mask_dir, imgname+'.png'), cv2.IMREAD_GRAYSCALE).astype(np.float32) / 255.
-    mask = 1-mask
+    img_lq = util.imread_uint(path, 3)
+    img_lq = util.single2tensor3(util.uint2single(img_lq)).unsqueeze(0)
+    mask = util.imread_uint(os.path.join(mask_dir, imgname+'.png'), 1)
+    mask = util.single2tensor2(util.mask_invert(util.uint2single(mask))).unsqueeze(0)
     return imgname, img_lq, mask
 
 

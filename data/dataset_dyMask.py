@@ -38,6 +38,7 @@ class DyMaskDataset(data.Dataset):
         L_path = H_path
 
         img_H = util.imread_uint(H_path, self.n_channels)
+        # cv2.imwrite("test.jpg", img_H)
 
         if self.opt['phase'] == 'train':
             """
@@ -64,9 +65,12 @@ class DyMaskDataset(data.Dataset):
             # add mask
             # --------------------------------
             img_L, mask = maskGenerator.gen_and_add_mask(patch_H, 
-                                                        mask_type=random.randint(1,3), 
+                                                        mask_type=random.randint(1,4), 
+                                                        # mask_type = 4,
                                                         max_mask_num=random.randint(0,10), 
-                                                        defect_value=random.randint(0,255))
+                                                        defect_value=255)
+
+            # cv2.imwrite("test.png" ,img_L)
 
             # --------------------------------
             # HWC to CHW, numpy(uint) to tensor
@@ -74,7 +78,9 @@ class DyMaskDataset(data.Dataset):
             img_L = util.uint2tensor3(img_L)
             img_H = util.uint2tensor3(patch_H)
             
-            mask = util.single2tensor2(mask)
+            mask = util.single2tensor2(mask).unsqueeze(0)
+
+            
 
         else:
             # --------------------------------

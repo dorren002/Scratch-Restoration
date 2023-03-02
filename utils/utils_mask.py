@@ -40,11 +40,14 @@ def random_square_mask(mask, max_mask_num, max_mask_size, min_mask_size):
         mask[rnd_mw:rnd_mw+rnd_sw, rnd_mh:rnd_mh+rnd_sh] = 1
     return mask
 
-def random_irregular_mask(mask, max_mask_num):
+def random_irregular_mask(mask, mask_dir="/home/lixuewei/dorren/outdir/real_2x/irregular_mask_128/", max_mask_idx=3285):
     ''' generate irregular defect mask '''
 
-    h, w = mask.shape
-    return mask
+    if mask_dir is None:
+        return
+    n = random.randint(0, max_mask_idx)
+    mask = cv2.imread(mask_dir + '{}.png'.format(n), 0)
+    return mask/255
 
 def add_mask(img, mask, value):
     '''
@@ -61,7 +64,7 @@ def add_mask(img, mask, value):
 def mask_invert(mask):
     return 1-mask
 
-def gen_and_add_mask(image, mask_type=0, max_mask_num=10, max_mask_size=30, min_mask_size=10, defect_value=255):
+def gen_and_add_mask(image, mask_type=0, max_mask_num=10, max_mask_size=30, min_mask_size=10, defect_value=255, mask_dir = "/home/lixuewei/dorren/outdir/real_2x/irregular_mask_128/"):
     '''
     generate randomly defection mask for image and add to the image
     :param: image [ndarray shape=(c,h,w)] image
@@ -84,7 +87,7 @@ def gen_and_add_mask(image, mask_type=0, max_mask_num=10, max_mask_size=30, min_
     elif mask_type==3:
         mask = random_square_mask(mask, max_mask_num, max_mask_size, min_mask_size)
     elif mask_type==4:
-        mask = random_irregular_mask(mask, max_mask_num)
+        mask = random_irregular_mask(mask, mask_dir)
     
     masked_image = add_mask(image, mask, defect_value)
 
