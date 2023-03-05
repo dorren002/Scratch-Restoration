@@ -1,5 +1,5 @@
 {
-  "task": "pconv_inpainting_0302_irregular_255" //  color Gaussian denoising for noise level 15/25/50. root/task/images-models-options
+  "task": "pconv_inpainting_0304_perceptual" //  color Gaussian denoising for noise level 15/25/50. root/task/images-models-options
   ,
   "model": "plain" // "plain" | "plain2" if two inputs
   ,
@@ -75,7 +75,7 @@
     "init_type": "default"
   },
   "train": {
-    "G_lossfn_type": "charbonnier" // "l1" | "l2sum" | "l2" | "ssim" | "charbonnier" preferred
+    "G_lossfn_type": "perceptual" // "l1" | "l2sum" | "l2" | "ssim" | "charbonnier" preferred
     ,
     "G_lossfn_weight": 1.0 // default
     ,

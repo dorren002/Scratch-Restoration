@@ -47,6 +47,8 @@ def calculate_psnr_on_defect_area(img1, img2, mask, border=0):
     img2 = (img2.transpose(2,0,1) * (1-mask)).astype(np.float64)
 
     pixel_num = np.count_nonzero(mask)
+    if pixel_num==0:
+        return 0
     mse = (np.sum((img1 - img2)**2)/3)/pixel_num
     if mse == 0:
         return float('inf')

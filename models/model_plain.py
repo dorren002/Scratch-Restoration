@@ -8,6 +8,7 @@ from models.select_network import define_G
 from models.model_base import ModelBase
 from models.loss import CharbonnierLoss
 from models.loss_ssim import SSIMLoss
+from models.loss import PerceptualLoss
 
 from utils.utils_model import test_mode
 from utils.utils_regularizers import regularizer_orth, regularizer_clip
@@ -87,7 +88,9 @@ class ModelPlain(ModelBase):
     # ----------------------------------------
     def define_loss(self):
         G_lossfn_type = self.opt_train['G_lossfn_type']
-        if G_lossfn_type == 'l1':
+        if G_lossfn_type == 'perceptual':
+            self.G_lossfn = PerceptualLoss().to(self.device)
+        elif G_lossfn_type == 'l1':
             self.G_lossfn = nn.L1Loss().to(self.device)
         elif G_lossfn_type == 'l2':
             self.G_lossfn = nn.MSELoss().to(self.device)
